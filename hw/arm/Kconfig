@@ -433,6 +433,9 @@ config MPS2
     select CMSDK_APB_WATCHDOG
     select VERSATILE_I2C
 
+config THOMAS_M3
+    bool
+
 config FSL_IMX7
     bool
     imply PCI_DEVICES
