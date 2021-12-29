@@ -55,8 +55,12 @@ static void thomas_common_init(MachineState *machine)
 
     MemoryRegion *system_memory = get_system_memory();
     MachineClass *mc = MACHINE_GET_CLASS(machine);
+    THOMASMachineClass *tmc = THOMAS_MACHINE_GET_CLASS(mms);
     DeviceState *armv7m;
 
+    fprintf(stderr, "[wjp] thomas_common_init parent name: %s \n", tmc->parent.name);
+    fprintf(stderr, "[wjp] thomas_common_init ssram1 name: %s \n", mms->ssram1.name);
+    fprintf(stderr, "[wjp] thomas_common_init cpu_type name: %s \n", mms->armv7m.cpu_type);
     fprintf(stderr, "[wjp] thomas_common_init name: %s cpu type: %s\n", mc->name , machine->cpu_type);
 
     MemoryRegion *sram = g_new(MemoryRegion, 1);
@@ -67,6 +71,16 @@ static void thomas_common_init(MachineState *machine)
 
 
     armv7m = DEVICE(&mms->armv7m);
+
+    /* Set clock and put into armv7m device */
+    mms->sysclk = clock_new(OBJECT(machine), "SYSCLK");
+    clock_set_hz(mms->sysclk, 24000000);
+    mms->refclk = clock_new(OBJECT(machine), "REFCLK");
+    clock_set_hz(mms->refclk, 1000000);
+
+    qdev_connect_clock_in(armv7m, "cpuclk", mms->sysclk);
+    qdev_connect_clock_in(armv7m, "refclk", mms->refclk);
+
 
     qdev_prop_set_string(armv7m, "cpu-type", machine->cpu_type);
     qdev_prop_set_bit(armv7m, "enable-bitband", true);
@@ -104,10 +118,15 @@ static void thomas_class_init(ObjectClass *oc, void *data)
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-m3");
 }
 
+static void thomas_instance_init(Object *obj)
+{
+    fprintf(stderr, "[wjp] thomas_instance_init\n");
+}
 
 static const TypeInfo thomas_info = {
     .name = MACHINE_TYPE_NAME("thomas-m3"),
     .parent = TYPE_MACHINE,
+    .instance_init = thomas_instance_init,
     .instance_size = sizeof(THOMASMachineState),
     .class_size = sizeof(THOMASMachineClass),
     .class_init = thomas_class_init,
