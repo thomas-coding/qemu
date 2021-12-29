@@ -89,11 +89,9 @@ static void thomas_common_init(MachineState *machine)
                              OBJECT(system_memory), &error_abort);
     sysbus_realize(SYS_BUS_DEVICE(&mms->armv7m), &error_fatal);
 
-
-
     cmsdk_apb_uart_create(0x40004000,
                             NULL,
-                            NULL,
+                            qdev_get_gpio_in(armv7m, 0),
                             NULL, NULL,
                             NULL,
                             serial_hd(0), 25000000);
