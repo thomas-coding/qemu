@@ -612,6 +612,39 @@ config MPS2
     select CMSDK_APB_WATCHDOG
     select ARM_SBCON_I2C
 
+config THOMAS_M3
+    bool
+	select THOMAS_TEST_DEVICE
+
+config THOMAS_M33
+    bool
+	select THOMAS_TEST_DEVICE
+
+config THOMAS_A15
+    bool
+	select THOMAS_TEST_DEVICE
+    select THOMAS_SPINLOCK
+
+config THOMAS_A53
+    bool
+	select THOMAS_TEST_DEVICE
+
+config THOMAS_A55
+    bool
+	select THOMAS_TEST_DEVICE
+
+config THOMAS_TIGER
+    bool
+	select THOMAS_TEST_DEVICE
+
+config P29A_LP
+    bool
+    select THOMAS_TEST_DEVICE
+    select DUMMY_TZC
+    select DUMMY_COMMON
+    select DUMMY_P29A_OTP
+    select DUMMY_P29A_SYS_CTRL
+
 config FSL_IMX7
     bool
     default y

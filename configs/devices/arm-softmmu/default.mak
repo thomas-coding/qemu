@@ -7,6 +7,9 @@ CONFIG_ARM_VIRT=y
 
 # These are selected by default when TCG is enabled, uncomment them to
 # keep out of the build.
+#CONFIG_THOMAS_M3=n
+#CONFIG_THOMAS_M33=n
+#CONFIG_THOMAS_A15=n
 # CONFIG_CUBIEBOARD=n
 # CONFIG_EXYNOS4=n
 # CONFIG_HIGHBANK=n
