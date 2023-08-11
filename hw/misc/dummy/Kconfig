@@ -1,0 +1,8 @@
+config DUMMY_TZC
+    bool
+config DUMMY_COMMON
+    bool
+config DUMMY_P29A_OTP
+    bool
+config DUMMY_P29A_SYS_CTRL
+    bool

@@ -71,3 +71,9 @@ config GOLDFISH_TTY
 
 config SHAKTI_UART
     bool
+
+config THOMAS_TEST_DEVICE
+    bool
+
+config THOMAS_SPINLOCK
+    bool

@@ -181,3 +181,4 @@ config AXP209_PMU
     depends on I2C
 
 source macio/Kconfig
+source dummy/Kconfig
