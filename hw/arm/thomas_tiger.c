@@ -57,7 +57,9 @@ enum {
     THOMAS_TIGER_GIC_DIST,
     THOMAS_TIGER_GIC_REDIST,
     THOMAS_TIGER_AON_APB,
-    THOMAS_TIGER_DSP_APB,
+    THOMAS_TIGER_DSP_APB1,
+    THOMAS_TIGER_DSP_APB_UART,
+    THOMAS_TIGER_DSP_APB2,
     THOMAS_TIGER_MAILBOX,
     THOMAS_TIGER_A55_APB0_SPI0,
     THOMAS_TIGER_A55_APB0_SPI1,
@@ -133,7 +135,9 @@ static const MemMapEntry base_memmap[] = {
     /* This redistributor space allows up to 2*64kB*123 CPUs */
     [THOMAS_TIGER_GIC_REDIST] =        { 0x30140000, 0x00F60000 },
     [THOMAS_TIGER_AON_APB] =           { 0x31000000, 0x00080000 },
-    [THOMAS_TIGER_DSP_APB] =           { 0x32080000, 0x00100000 },
+    [THOMAS_TIGER_DSP_APB1] =          { 0x32080000, 0x000a0000 },
+    [THOMAS_TIGER_DSP_APB_UART] =      { 0x32120000, 0x00010000 },
+    [THOMAS_TIGER_DSP_APB2] =          { 0x32130000, 0x00070000 },
     [THOMAS_TIGER_MAILBOX] =           { 0x33000000, 0x00010000 },
     [THOMAS_TIGER_A55_APB0_SPI0] =     { 0x34000000, 0x00010000 },
     [THOMAS_TIGER_A55_APB0_SPI1] =     { 0x34010000, 0x00010000 },
@@ -204,7 +208,7 @@ static const MemMapEntry base_memmap[] = {
     /* This redistributor space allows up to 2*64kB*123 CPUs */
     [THOMAS_TIGER_GIC_REDIST] =        { 0x30140000, 0x00F60000 },
     [THOMAS_TIGER_AON_APB] =           { 0x31000000, 0x00060000 },
-    [THOMAS_TIGER_DSP_APB] =           { 0x32080000, 0x000d0000 },
+    [THOMAS_TIGER_DSP_APB1] =           { 0x32080000, 0x000d0000 },
     [THOMAS_TIGER_MAILBOX] =           { 0x33000000, 0x00010000 },
     [THOMAS_TIGER_A55_APB0_SPI0] =     { 0x34000000, 0x00010000 },
     [THOMAS_TIGER_A55_APB0_SPI1] =     { 0x34010000, 0x00010000 },
@@ -269,7 +273,7 @@ static const MemMapEntry base_memmap[] = {
     /* This redistributor space allows up to 2*64kB*123 CPUs */
     [THOMAS_TIGER_GIC_REDIST] =        { 0x30140000, 0x00F60000 },
     [THOMAS_TIGER_AON_APB] =           { 0x31000000, 0x00060000 },
-    [THOMAS_TIGER_DSP_APB] =           { 0x32080000, 0x000d0000 },
+    [THOMAS_TIGER_DSP_APB1] =           { 0x32080000, 0x000d0000 },
     [THOMAS_TIGER_MAILBOX] =           { 0x33000000, 0x00010000 },
     [THOMAS_TIGER_A55_APB0_SPI0] =     { 0x34000000, 0x00010000 },
     [THOMAS_TIGER_A55_APB0_SPI1] =     { 0x34010000, 0x00010000 },
@@ -332,6 +336,10 @@ static const MemMapEntry base_memmap[] = {
 #define THOMAS_TIGER_UART2_IRQ    (83)
 #define THOMAS_TIGER_UART3_IRQ    (84)
 #define THOMAS_TIGER_UART4_IRQ    (85)
+#define THOMAS_TIGER_UART5_IRQ    (70)
+#define THOMAS_TIGER_UART6_IRQ    (73)
+#define THOMAS_TIGER_UART7_IRQ    (141)
+
 #define THOMAS_TIGER_SD_IRQ    (13)
 
 struct THOMASTIGERMachineClass {
@@ -507,9 +515,15 @@ static void thomas_tiger_common_init(MachineState *machine)
 
     qemu_irq uart1_irq = qdev_get_gpio_in(mms->gic, THOMAS_TIGER_UART1_IRQ);
     serial_mm_init(get_system_memory(), base_memmap[THOMAS_TIGER_A55_APB0_UART1].base, 2,
-                   uart1_irq, 115200, serial_hd(0),
+                   uart1_irq, 115200, serial_hd(2),
                    DEVICE_LITTLE_ENDIAN);
     create_unimplemented_device("dw-apb-uart1", base_memmap[THOMAS_TIGER_A55_APB0_UART1].base + 0x20, 0xe0);
+
+    qemu_irq uart7_irq = qdev_get_gpio_in(mms->gic, THOMAS_TIGER_UART7_IRQ);
+    serial_mm_init(get_system_memory(), base_memmap[THOMAS_TIGER_DSP_APB_UART].base, 2,
+                   uart7_irq, 115200, serial_hd(0),
+                   DEVICE_LITTLE_ENDIAN);
+    create_unimplemented_device("dw-apb-uart6", base_memmap[THOMAS_TIGER_DSP_APB_UART].base + 0x20, 0xe0);
 
     /* SD */
     qemu_irq sd_irq = qdev_get_gpio_in(mms->gic, THOMAS_TIGER_SD_IRQ);
@@ -525,7 +539,8 @@ static void thomas_tiger_common_init(MachineState *machine)
     create_unimplemented_device("aon-apb", base_memmap[THOMAS_TIGER_AON_APB].base, base_memmap[THOMAS_TIGER_AON_APB].size);
     create_unimplemented_device("i2c", base_memmap[THOMAS_TIGER_A55_APB0_I2C0].base, base_memmap[THOMAS_TIGER_A55_APB0_I2C0].size * 5);
     create_unimplemented_device("sysctl", base_memmap[THOMAS_TIGER_A55_APB1_SYS_CTL].base, base_memmap[THOMAS_TIGER_A55_APB1_SYS_CTL].size);
-    create_unimplemented_device("dsp-apb", base_memmap[THOMAS_TIGER_DSP_APB].base, base_memmap[THOMAS_TIGER_DSP_APB].size);
+    create_unimplemented_device("dsp-apb1", base_memmap[THOMAS_TIGER_DSP_APB1].base, base_memmap[THOMAS_TIGER_DSP_APB1].size);
+    create_unimplemented_device("dsp-apb2", base_memmap[THOMAS_TIGER_DSP_APB2].base, base_memmap[THOMAS_TIGER_DSP_APB2].size);
     create_unimplemented_device("top-crm", base_memmap[THOMAS_TIGER_A55_APB1_TOP_CRM].base, base_memmap[THOMAS_TIGER_A55_APB1_TOP_CRM].size);
     create_unimplemented_device("dw-apb-uart2", base_memmap[THOMAS_TIGER_A55_APB0_UART2].base, base_memmap[THOMAS_TIGER_A55_APB0_UART2].size);
     create_unimplemented_device("dw-apb-uart3", base_memmap[THOMAS_TIGER_A55_APB0_UART3].base, base_memmap[THOMAS_TIGER_A55_APB0_UART3].size);
