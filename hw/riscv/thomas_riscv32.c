@@ -163,8 +163,8 @@ static void thomas_riscv32_common_init(MachineState *machine)
                    DEVICE_LITTLE_ENDIAN);
 
     if (machine->kernel_filename) {
-        riscv_load_kernel(machine->kernel_filename,
-                          base_memmap[THOMAS_RISCV32_FLASH].base, NULL);
+        riscv_load_kernel(machine, &mms->cpus,
+                          base_memmap[THOMAS_RISCV32_FLASH].base, true, NULL);
     }
 }
 

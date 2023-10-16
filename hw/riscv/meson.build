@@ -10,5 +10,7 @@ riscv_ss.add(when: 'CONFIG_SIFIVE_U', if_true: files('sifive_u.c'))
 riscv_ss.add(when: 'CONFIG_SPIKE', if_true: files('spike.c'))
 riscv_ss.add(when: 'CONFIG_MICROCHIP_PFSOC', if_true: files('microchip_pfsoc.c'))
 riscv_ss.add(when: 'CONFIG_ACPI', if_true: files('virt-acpi-build.c'))
+riscv_ss.add(when: 'CONFIG_THOMAS_RISCV32', if_true: files('thomas_riscv32.c'))
+riscv_ss.add(when: 'CONFIG_THOMAS_RISCV64', if_true: files('thomas_riscv64.c'))
 
 hw_arch += {'riscv': riscv_ss}
