@@ -79,10 +79,10 @@ enum {
 static const MemMapEntry base_memmap[] = {
     [THOMAS_RISCV64_CLINT] =        {  0x2000000,    0x10000 },
     [THOMAS_RISCV64_PLIC] =         {  0xc000000,  0x4000000 },
-    [THOMAS_RISCV64_UART0] =        { 0x10013000,     0x1000 },
+    [THOMAS_RISCV64_UART0] =        { 0x10000000,     0x1000 },
     [THOMAS_RISCV64_FLASH] =        { 0x20000000, 0x02000000 },
     [THOMAS_RISCV64_TEST_DEVICE] =  { 0x60000000,     0x1000 },
-    [THOMAS_RISCV64_SRAM] =         { 0x80000000, 0x02000000 },
+    [THOMAS_RISCV64_SRAM] =         { 0x80000000, 0x08000000 },
 };
 
 struct THOMASRISCV64MachineClass {
@@ -112,7 +112,7 @@ static void thomas_riscv64_common_init(MachineState *machine)
     object_initialize_child(OBJECT(mms), "cpus", &mms->cpus, TYPE_RISCV_HART_ARRAY);
     object_property_set_int(OBJECT(&mms->cpus), "num-harts", 1,
                             &error_abort);
-    object_property_set_int(OBJECT(&mms->cpus), "resetvec", base_memmap[THOMAS_RISCV64_FLASH].base, &error_abort);
+    object_property_set_int(OBJECT(&mms->cpus), "resetvec", base_memmap[THOMAS_RISCV64_SRAM].base, &error_abort);
 
     /* Realize */
     object_property_set_str(OBJECT(&mms->cpus), "cpu-type", ms->cpu_type,
@@ -164,11 +164,15 @@ static void thomas_riscv64_common_init(MachineState *machine)
 
     if (machine->kernel_filename) {
 <<<<<<< HEAD
+<<<<<<< HEAD
         riscv_load_kernel(machine, &mms->cpus, 0, true, NULL);
 =======
         riscv_load_kernel(machine, &mms->cpus,
                           base_memmap[THOMAS_RISCV64_FLASH].base, true, NULL);
 >>>>>>> 380bed7a83... vp: add riscv64, only compile ok
+=======
+        riscv_load_kernel(machine, &mms->cpus, 0, true, NULL);
+>>>>>>> 26cac62559... riscv: fix some address issue
     }
 }
 
