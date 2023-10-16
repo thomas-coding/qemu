@@ -79,10 +79,10 @@ enum {
 static const MemMapEntry base_memmap[] = {
     [THOMAS_RISCV64_CLINT] =        {  0x2000000,    0x10000 },
     [THOMAS_RISCV64_PLIC] =         {  0xc000000,  0x4000000 },
-    [THOMAS_RISCV64_UART0] =        { 0x10000000,     0x1000 },
+    [THOMAS_RISCV64_UART0] =        { 0x10013000,     0x1000 },
     [THOMAS_RISCV64_FLASH] =        { 0x20000000, 0x02000000 },
-    [THOMAS_RISCV64_TEST_DEVICE] =  { 0x30000000,     0x1000 },
-    [THOMAS_RISCV64_SRAM] =         { 0x40000000, 0x08000000 },
+    [THOMAS_RISCV64_TEST_DEVICE] =  { 0x60000000,     0x1000 },
+    [THOMAS_RISCV64_SRAM] =         { 0x80000000, 0x02000000 },
 };
 
 struct THOMASRISCV64MachineClass {
@@ -163,7 +163,12 @@ static void thomas_riscv64_common_init(MachineState *machine)
                    DEVICE_LITTLE_ENDIAN);
 
     if (machine->kernel_filename) {
+<<<<<<< HEAD
         riscv_load_kernel(machine, &mms->cpus, 0, true, NULL);
+=======
+        riscv_load_kernel(machine, &mms->cpus,
+                          base_memmap[THOMAS_RISCV64_FLASH].base, true, NULL);
+>>>>>>> 380bed7a83... vp: add riscv64, only compile ok
     }
 }
 
