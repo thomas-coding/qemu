@@ -87,3 +87,17 @@ config SPIKE
     select HTIF
     select RISCV_ACLINT
     select SIFIVE_PLIC
+
+config THOMAS_RISCV32
+    bool
+    select RISCV_NUMA
+    select RISCV_ACLINT
+    select SIFIVE_PLIC
+	select THOMAS_TEST_DEVICE
+
+config THOMAS_RISCV64
+    bool
+    select RISCV_NUMA
+    select RISCV_ACLINT
+    select SIFIVE_PLIC
+	select THOMAS_TEST_DEVICE
