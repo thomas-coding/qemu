@@ -112,7 +112,7 @@ static void thomas_riscv32_common_init(MachineState *machine)
     object_initialize_child(OBJECT(mms), "cpus", &mms->cpus, TYPE_RISCV_HART_ARRAY);
     object_property_set_int(OBJECT(&mms->cpus), "num-harts", 1,
                             &error_abort);
-    object_property_set_int(OBJECT(&mms->cpus), "resetvec", base_memmap[THOMAS_RISCV32_SRAM].base, &error_abort);
+    object_property_set_int(OBJECT(&mms->cpus), "resetvec", base_memmap[THOMAS_RISCV32_FLASH].base, &error_abort);
 
     /* Realize */
     object_property_set_str(OBJECT(&mms->cpus), "cpu-type", ms->cpu_type,

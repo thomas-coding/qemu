@@ -163,16 +163,7 @@ static void thomas_riscv64_common_init(MachineState *machine)
                    DEVICE_LITTLE_ENDIAN);
 
     if (machine->kernel_filename) {
-<<<<<<< HEAD
-<<<<<<< HEAD
         riscv_load_kernel(machine, &mms->cpus, 0, true, NULL);
-=======
-        riscv_load_kernel(machine, &mms->cpus,
-                          base_memmap[THOMAS_RISCV64_FLASH].base, true, NULL);
->>>>>>> 380bed7a83... vp: add riscv64, only compile ok
-=======
-        riscv_load_kernel(machine, &mms->cpus, 0, true, NULL);
->>>>>>> 26cac62559... riscv: fix some address issue
     }
 }
 
