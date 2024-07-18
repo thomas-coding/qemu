@@ -1,31 +1,7 @@
 /*
- * QEMU RISC-V Board Compatible with SiFive Freedom E SDK
+ * QEMU RISC-V Board
  *
- * Copyright (c) 2017 SiFive, Inc.
- *
- * Provides a board compatible with the SiFive Freedom E SDK:
- *
- * 0) UART
- * 1) CLINT (Core Level Interruptor)
- * 2) PLIC (Platform Level Interrupt Controller)
- * 3) PRCI (Power, Reset, Clock, Interrupt)
- * 4) Registers emulated as RAM: AON, GPIO, QSPI, PWM
- * 5) Flash memory emulated as RAM
- *
- * The Mask ROM reset vector jumps to the flash payload at 0x2040_0000.
- * The OTP ROM and Flash boot code will be emulated in a future version.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms and conditions of the GNU General Public License,
- * version 2 or later, as published by the Free Software Foundation.
- *
- * This program is distributed in the hope it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) Thomas
  */
 
 #include "qemu/osdep.h"
@@ -49,40 +25,40 @@
 #include "sysemu/sysemu.h"
 #include "hw/char/thomas_test_device.h"
 
-#define THOMAS_RISCV64_PLIC_HART_CONFIG "M"
-#define THOMAS_RISCV64_PLIC_NUM_SOURCES 127
+#define THOMAS_RISCV64_PLIC_HART_CONFIG "MS"
+#define THOMAS_RISCV64_PLIC_NUM_SOURCES 250
 #define THOMAS_RISCV64_PLIC_NUM_PRIORITIES 7
-#define THOMAS_RISCV64_PLIC_PRIORITY_BASE 0x04
+#define THOMAS_RISCV64_PLIC_PRIORITY_BASE 0x00
 #define THOMAS_RISCV64_PLIC_PENDING_BASE 0x1000
 #define THOMAS_RISCV64_PLIC_ENABLE_BASE 0x2000
 #define THOMAS_RISCV64_PLIC_ENABLE_STRIDE 0x80
 #define THOMAS_RISCV64_PLIC_CONTEXT_BASE 0x200000
 #define THOMAS_RISCV64_PLIC_CONTEXT_STRIDE 0x1000
 
-#define THOMAS_RISCV64_TEST_DEVICE_IRQ      100
+#define THOMAS_RISCV64_TEST_DEVICE_IRQ      21
 #define THOMAS_RISCV64_UART0_IRQ            20
 
 enum {
-    THOMAS_RISCV64_FLASH,
     THOMAS_RISCV64_SRAM,
     THOMAS_RISCV64_UART0,
     THOMAS_RISCV64_CLINT,
     THOMAS_RISCV64_PLIC,
     THOMAS_RISCV64_TEST_DEVICE,
+    THOMAS_RISCV64_DDR,
 };
 
 /* Thomas-RISCV64 memory map
  *
- *  0x00000000 .. 0x01ffffff : Flash(32M)
- *  0x10000000 .. 0x11ffffff : SRAM(32M)
+ *  0x20000000 .. 0x20400000 : SRAM(4M)
+ *  0x40000000 .. 0xc0000000 : DDR(1G)
  */
 static const MemMapEntry base_memmap[] = {
     [THOMAS_RISCV64_CLINT] =        {  0x2000000,    0x10000 },
     [THOMAS_RISCV64_PLIC] =         {  0xc000000,  0x4000000 },
     [THOMAS_RISCV64_UART0] =        { 0x10000000,     0x1000 },
-    [THOMAS_RISCV64_FLASH] =        { 0x20000000, 0x02000000 },
+    [THOMAS_RISCV64_SRAM] =         { 0x20000000, 0x00400000 },
     [THOMAS_RISCV64_TEST_DEVICE] =  { 0x30000000,     0x1000 },
-    [THOMAS_RISCV64_SRAM] =         { 0x40000000, 0x08000000 },
+    [THOMAS_RISCV64_DDR] =          { 0x40000000, 0x40000000 },
 };
 
 struct THOMASRISCV64MachineClass {
@@ -93,7 +69,7 @@ struct THOMASRISCV64MachineState {
     MachineState parent;
 
     RISCVHartArrayState cpus;
-    MemoryRegion *flash;
+    MemoryRegion *ddr;
     MemoryRegion *sram;
     DeviceState *plic;
 };
@@ -107,23 +83,24 @@ static void thomas_riscv64_common_init(MachineState *machine)
     THOMASRISCV64MachineState *mms = THOMAS_RISCV64_MACHINE(machine);
     MachineState *ms = MACHINE(qdev_get_machine());
     qemu_irq test_device_irq, uart0_irq;
+    g_autofree char *plic_hart_config = NULL;
 
     /* Init hart */
     object_initialize_child(OBJECT(mms), "cpus", &mms->cpus, TYPE_RISCV_HART_ARRAY);
-    object_property_set_int(OBJECT(&mms->cpus), "num-harts", 1,
+    object_property_set_int(OBJECT(&mms->cpus), "num-harts", ms->smp.cpus,
                             &error_abort);
-    object_property_set_int(OBJECT(&mms->cpus), "resetvec", base_memmap[THOMAS_RISCV64_FLASH].base, &error_abort);
+    object_property_set_int(OBJECT(&mms->cpus), "resetvec", base_memmap[THOMAS_RISCV64_SRAM].base, &error_abort);
 
     /* Realize */
     object_property_set_str(OBJECT(&mms->cpus), "cpu-type", ms->cpu_type,
                             &error_abort);
     sysbus_realize(SYS_BUS_DEVICE(&mms->cpus), &error_abort);
 
-    /* Flash */
-    mms->flash = g_new(MemoryRegion, 1);
-    memory_region_init_rom(mms->flash, NULL, "thomas_riscv64.flash",
-                           base_memmap[THOMAS_RISCV64_FLASH].size, &error_fatal);
-    memory_region_add_subregion(get_system_memory(), base_memmap[THOMAS_RISCV64_FLASH].base, mms->flash);
+    /* DDR */
+    mms->ddr = g_new(MemoryRegion, 1);
+    memory_region_init_ram(mms->ddr, NULL, "thomas_riscv64.ddr",
+                           base_memmap[THOMAS_RISCV64_DDR].size, &error_fatal);
+    memory_region_add_subregion(get_system_memory(), base_memmap[THOMAS_RISCV64_DDR].base, mms->ddr);
 
     /* Sram */
     mms->sram = g_new(MemoryRegion, 1);
@@ -140,8 +117,9 @@ static void thomas_riscv64_common_init(MachineState *machine)
         RISCV_ACLINT_DEFAULT_TIMEBASE_FREQ, true);
 
     /* Plic */
+    plic_hart_config = riscv_plic_hart_config_string(ms->smp.cpus);
     mms->plic = sifive_plic_create(base_memmap[THOMAS_RISCV64_PLIC].base,
-                                   (char *)THOMAS_RISCV64_PLIC_HART_CONFIG, ms->smp.cpus, 0,
+                                   plic_hart_config, ms->smp.cpus, 0,
                                    THOMAS_RISCV64_PLIC_NUM_SOURCES,
                                    THOMAS_RISCV64_PLIC_NUM_PRIORITIES,
                                    THOMAS_RISCV64_PLIC_PRIORITY_BASE,
@@ -165,6 +143,7 @@ static void thomas_riscv64_common_init(MachineState *machine)
     if (machine->kernel_filename) {
         riscv_load_kernel(machine, &mms->cpus, 0, true, NULL);
     }
+
 }
 
 static void thomas_riscv64_class_init(ObjectClass *oc, void *data)
@@ -173,8 +152,8 @@ static void thomas_riscv64_class_init(ObjectClass *oc, void *data)
 
     //fprintf(stderr, "[wjp] thomas_riscv64_class_init\n");
     mc->init = thomas_riscv64_common_init;
-    mc->max_cpus = 1;
-    mc->default_ram_size = base_memmap[THOMAS_RISCV64_SRAM].size;
+    mc->max_cpus = 16;
+    mc->default_ram_size = base_memmap[THOMAS_RISCV64_DDR].size;
     mc->default_ram_id = "thomas.ram";
 
     mc->desc = "THOMAS for RISCV64";
